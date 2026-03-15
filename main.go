@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -43,9 +44,6 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
-		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
-		},
 	})
 
 	// Create a new window with the necessary options.
@@ -54,14 +52,39 @@ func main() {
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Jot",
 		Width:     0,
 		Height:    0,
 		MinWidth:  600,
 		MinHeight: 400,
 		URL:       "/",
+		// Frameless:   true,
+		// AlwaysOnTop: true,
 	})
+
+	window.Hide()
+
+	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		e.Cancel()
+		window.Hide()
+		return
+	})
+
+	systray := app.SystemTray.New()
+	systray.SetLabel("Jot")
+
+	menu := app.NewMenu()
+	menu.Add("Show").OnClick(func(ctx *application.Context) {
+		window.Show()
+
+	})
+
+	menu.Add("Quit").OnClick(func(ctx *application.Context) {
+		app.Quit()
+	})
+
+	systray.SetMenu(menu)
 
 	// Create a goroutine that emits an event containing the current time every second.
 	// The frontend can listen to this event and update the UI accordingly.

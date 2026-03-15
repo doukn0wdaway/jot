@@ -1,6 +1,17 @@
+import { useEffect } from "react";
 import { Editor } from "./Editor";
 
 function App() {
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as Element;
+      if (!target.closest("[data-focus-allowed]")) {
+        (e.relatedTarget as HTMLElement)?.focus();
+      }
+    };
+    document.addEventListener("focusin", onFocusIn);
+    return () => document.removeEventListener("focusin", onFocusIn);
+  }, []);
   // const [name, setName] = useState<string>("");
   // const [result, setResult] = useState<string>(
   //   "Please enter your name below 👇",
@@ -22,9 +33,7 @@ function App() {
   // };
   //
   // useEffect(() => {
-  //   Events.On("time", (timeValue: any) => {
-  //     setTime(timeValue.data);
-  //   });
+  //   Events.On("time", (timeValue: any) => {});
   //   // Reload WML so it picks up the wml tags
   //   WML.Reload();
   // }, []);
