@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { EditorView, minimalSetup } from "codemirror";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import { vim } from "@replit/codemirror-vim";
 import { autocompletion, CompletionContext } from "@codemirror/autocomplete";
+import { markdown } from "@codemirror/lang-markdown";
+import { tokyoNightMoon } from "./theme";
+import { javascript } from "@codemirror/lang-javascript";
+import { languages } from "@codemirror/language-data";
+
+const vimCompartment = new Compartment();
 
 interface EditorProps {
   initialValue?: string;
@@ -28,20 +34,28 @@ function myTagCompletions(context: CompletionContext) {
 export const Editor = ({ initialValue, onChange }: EditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
+  const [useVimMotions, setUseVimMotions] = useState<boolean>(false);
 
   useEffect(() => {
     if (!editorRef.current || view) return;
-
     const state = EditorState.create({
       doc: initialValue,
 
       extensions: [
-        vim(),
+        vimCompartment.of(useVimMotions ? vim() : []),
         minimalSetup,
+        markdown({
+          codeLanguages: languages,
+        }),
         autocompletion({
           override: [myTagCompletions],
           activateOnTypingDelay: 0,
         }),
+        javascript({
+          jsx: true,
+          typescript: true,
+        }),
+        tokyoNightMoon,
         // EditorView.updateListener.of((update) => {
         //   if (update.docChanged) {
         //     onChange(update.state.doc.toString());
@@ -67,15 +81,31 @@ export const Editor = ({ initialValue, onChange }: EditorProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!view) return;
+
+    view.dispatch({
+      effects: [vimCompartment.reconfigure(useVimMotions ? vim() : [])],
+    });
+  }, [useVimMotions, setUseVimMotions, view]);
+
   return (
-    <div
-      ref={editorRef}
-      className="wails-editor-container"
-      style={{
-        height: "100%",
-        width: "100%",
-        textAlign: "left",
-      }}
-    />
+    <div style={{ height: "100%" }}>
+      <div
+        ref={editorRef}
+        className="wails-editor-container"
+        style={{
+          height: "100%",
+          width: "100%",
+          textAlign: "left",
+        }}
+      />
+
+      <div style={{ position: "absolute", right: 0, top: 0 }}>
+        <button onClick={() => setUseVimMotions((prev) => !prev)}>
+          turn vim motions
+        </button>
+      </div>
+    </div>
   );
 };

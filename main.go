@@ -55,12 +55,12 @@ func main() {
 	// 'URL' is the URL that will be loaded into the webview.
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:       "Jot",
-		Width:       0,
-		Height:      0,
-		Frameless:   false,
-		AlwaysOnTop: false,
-		URL:         "/",
+		Title:     "Jot",
+		Width:     0,
+		Height:    0,
+		MinWidth:  600,
+		MinHeight: 400,
+		URL:       "/",
 	})
 
 	// Create a goroutine that emits an event containing the current time every second.
