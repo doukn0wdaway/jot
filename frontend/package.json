@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.1",
+    "@replit/codemirror-vim": "^6.3.0",
     "@wailsio/runtime": "latest",
+    "codemirror": "^6.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
