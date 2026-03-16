@@ -1,71 +1,118 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorView, minimalSetup } from "codemirror";
 import { Compartment, EditorState } from "@codemirror/state";
-import { vim } from "@replit/codemirror-vim";
-import { autocompletion, CompletionContext } from "@codemirror/autocomplete";
+import { Vim, vim } from "@replit/codemirror-vim";
+import { autocompletion } from "@codemirror/autocomplete";
 import { markdown } from "@codemirror/lang-markdown";
 import { tokyoNightMoon } from "./theme";
 import { javascript } from "@codemirror/lang-javascript";
 import { languages } from "@codemirror/language-data";
+import { Window } from "@wailsio/runtime";
 
 const vimCompartment = new Compartment();
 const completionCompartment = new Compartment();
 
 interface EditorProps {
   initialValue?: string;
-  onChange?: (value: string) => void;
+  onSave: (text: string) => void;
+  onDiscard: () => void;
+  tags: string[];
 }
 
-export const Editor = ({ initialValue, onChange }: EditorProps) => {
+export const Editor = ({ initialValue, onSave, onDiscard, tags }: EditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<EditorView | null>(null);
-  const [useVimMotions, setUseVimMotions] = useState<boolean>(true);
-  const [tags, setTags] = useState<string[]>([
-    "todo",
-    "idea",
-    "work",
-    "personal",
-  ]);
+  const viewRef = useRef<EditorView | null>(null);
 
-  function tagCompletions(context: CompletionContext) {
-    let word = context.matchBefore(/#\w*/);
-
-    if (!word || (word.from === word.to && !context.explicit)) return null;
-
-    return {
-      from: word.from,
-      options: tags.map((i) => ({ label: "#" + i, type: "keyword" })),
-    };
-  }
+  const dataRef = useRef({ onSave, onDiscard, tags });
+  const [useVimMotions, _setUseVimMotions] = useState(true);
 
   useEffect(() => {
-    if (!editorRef.current || view) return;
+    dataRef.current = { onSave, onDiscard, tags };
+  }, [onSave, onDiscard, tags]);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    Vim.defineEx("write", "w", () => {
+      const view = viewRef.current;
+      if (!view) return;
+
+      const text = view.state.doc.toString() || "";
+      dataRef.current.onSave(text);
+    });
+
+    Vim.defineEx("quit", "q", () => {
+      const view = viewRef.current;
+      if (!view) return;
+      dataRef.current.onDiscard();
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "" } });
+      Window.Hide();
+    });
+
+    Vim.defineEx("wq", "wq", () => {
+      const view = viewRef.current;
+      if (!view) return;
+      const text = view.state.doc.toString() || "";
+      dataRef.current.onSave(text);
+      dataRef.current.onDiscard();
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "" } });
+      Window.Hide();
+    });
+
     const state = EditorState.create({
       doc: initialValue,
-
       extensions: [
         vimCompartment.of(useVimMotions ? vim() : []),
         minimalSetup,
-        markdown({
-          codeLanguages: languages,
-        }),
+        markdown({ codeLanguages: languages }),
+        javascript({ jsx: true, typescript: true }),
+        tokyoNightMoon,
         completionCompartment.of(
           autocompletion({
-            override: [tagCompletions],
+            override: [
+              (context) => {
+                let word = context.matchBefore(/#\w*/);
+                if (!word || (word.from === word.to && !context.explicit))
+                  return null;
 
+                const staticTags = dataRef.current.tags.map((t) => "#" + t);
+
+                const text = context.state.doc.toString();
+
+                const currentWordStart = word.from;
+
+                const dynamicTags: string[] = [];
+                const matches = text.matchAll(/#(\w+)/g);
+
+                for (const match of matches) {
+                  const matchStart = match.index!;
+                  const matchText = match[0];
+
+                  if (matchStart === currentWordStart) {
+                    continue;
+                  }
+
+                  dynamicTags.push(matchText);
+                }
+
+                const allUniqueTags = Array.from(
+                  new Set([...staticTags, ...dynamicTags]),
+                );
+
+                return {
+                  from: word.from,
+                  options: allUniqueTags.map((tag) => ({
+                    label: tag,
+                    type: "keyword",
+                    boost: staticTags.includes(tag) ? 1 : 0,
+                  })),
+                  filter: true,
+                };
+              },
+            ],
             activateOnTypingDelay: 0,
           }),
         ),
-        javascript({
-          jsx: true,
-          typescript: true,
-        }),
-        tokyoNightMoon,
-        // EditorView.updateListener.of((update) => {
-        //   if (update.docChanged) {
-        //     onChange(update.state.doc.toString());
-        //   }
-        // }),
         EditorView.theme({
           "&": { height: "100%" },
           ".cm-scroller": { overflow: "auto" },
@@ -73,65 +120,39 @@ export const Editor = ({ initialValue, onChange }: EditorProps) => {
       ],
     });
 
-    const editorView = new EditorView({
-      state,
-      parent: editorRef.current,
-    });
+    const view = new EditorView({ state, parent: editorRef.current });
+    viewRef.current = view;
+    view.focus();
 
-    editorView.focus();
-    setView(editorView);
-
-    return () => {
-      editorView.destroy();
-      setView(null);
-    };
+    return () => view.destroy();
   }, []);
 
   useEffect(() => {
-    if (!view) return;
-
-    view.dispatch({
-      effects: completionCompartment.reconfigure(
-        autocompletion({ override: [tagCompletions] }),
-      ),
+    viewRef.current?.dispatch({
+      effects: vimCompartment.reconfigure(useVimMotions ? vim() : []),
     });
-  }, [tags, view, tagCompletions]);
-
-  useEffect(() => {
-    if (!view) return;
-
-    view.dispatch({
-      effects: [vimCompartment.reconfigure(useVimMotions ? vim() : [])],
-    });
-  }, [useVimMotions, setUseVimMotions, view]);
+  }, [useVimMotions]);
 
   return (
-    <div style={{ height: "100%" }}>
+    <div style={{ height: "100%", position: "relative" }}>
       <div
         ref={editorRef}
         data-focus-allowed
         className="wails-editor-container"
-        style={{
-          height: "100%",
-          width: "100%",
-          textAlign: "left",
-        }}
+        style={{ height: "100%" }}
       />
-
-      <div style={{ position: "absolute", right: 0, top: 0 }}>
-        <button onClick={() => setUseVimMotions((prev) => !prev)}>
-          turn vim motions
-        </button>
-
-        <button
-          onClick={() => setTags((prev) => [...prev, "aboba" + prev.length])}
-        >
-          add
-          {tags}
-        </button>
-        <button onClick={() => alert(view.state.doc.toString())}>
-          something
-        </button>
+      <div
+        style={{
+          position: "absolute",
+          right: 10,
+          top: 10,
+          display: "flex",
+          gap: "5px",
+        }}
+      >
+        {/* <button onClick={() => setUseVimMotions((prev) => !prev)}> */}
+        {/*   Vim: {useVimMotions ? "ON" : "OFF"} */}
+        {/* </button> */}
       </div>
     </div>
   );

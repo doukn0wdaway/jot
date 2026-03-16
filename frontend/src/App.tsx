@@ -1,7 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Editor } from "./Editor";
+import { TagsService, NoteService } from "../bindings/jot";
+import { Events } from "@wailsio/runtime";
 
 function App() {
+  const [tags, setTags] = useState<string[]>([]);
+
   useEffect(() => {
     const onFocusIn = (e: FocusEvent) => {
       const target = e.target as Element;
@@ -13,33 +17,35 @@ function App() {
     return () => document.removeEventListener("focusin", onFocusIn);
   }, []);
 
-  // const [name, setName] = useState<string>("");
-  // const [result, setResult] = useState<string>(
-  //   "Please enter your name below 👇",
-  // );
-  // const [time, setTime] = useState<string>("Listening for Time event...");
-  //
-  // const doGreet = () => {
-  //   let localName = name;
-  //   if (!localName) {
-  //     localName = "anonymous";
-  //   }
-  //   GreetService.Greet(localName)
-  //     .then((resultValue: string) => {
-  //       setResult(resultValue);
-  //     })
-  //     .catch((err: any) => {
-  //       console.log(err);
-  //     });
-  // };
-  //
-  // useEffect(() => {
-  //   Events.On("time", (timeValue: any) => {});
-  //   // Reload WML so it picks up the wml tags
-  //   WML.Reload();
-  // }, []);
+  useEffect(() => {
+    // Загружаем кеш сразу
+    TagsService.GetTags().then((cached) => {
+      if (cached?.length) setTags(cached);
+    });
 
-  return <Editor initialValue="" onChange={(val) => console.log(val)} />;
+    // Запускаем фоновый скан
+    TagsService.ScanTags();
+
+    // Обновляем когда скан завершён
+    const unsub = Events.On("tags-ready", (e) => {
+      setTags(e.data as string[]);
+    });
+
+    return () => unsub();
+  }, []);
+
+  return (
+    <Editor
+      initialValue=""
+      onSave={(val) =>
+        NoteService.SaveNote(val).catch((err: any) =>
+          console.error("SaveNote:", err),
+        )
+      }
+      onDiscard={() => NoteService.ResetCurrNotePath()}
+      tags={tags}
+    />
+  );
 }
 
 export default App;

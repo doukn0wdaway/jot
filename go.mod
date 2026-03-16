@@ -1,4 +1,4 @@
-module changeme
+module jot
 
 go 1.25
 
