@@ -4,6 +4,7 @@ import { tags as t } from "@lezer/highlight";
 
 const kitty = {
   bg: "#222436",
+  bgDarker: "#181a36",
   fg: "#c8d3f5",
   selection: "#2d3f76",
   cursor: "#c8d3f5",
@@ -30,6 +31,7 @@ const kitty = {
 export const tokyoNightMoonTheme = EditorView.theme(
   {
     "&": {
+      fontSize: "14px",
       color: kitty.fg,
       backgroundColor: kitty.bg,
     },
@@ -39,11 +41,9 @@ export const tokyoNightMoonTheme = EditorView.theme(
     "&.cm-focused .cm-cursor": {
       borderLeftColor: kitty.cursor,
     },
-    "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection":
-      {
-        backgroundColor: kitty.selection,
-        color: kitty.fg,
-      },
+    ".cm-selectionBackground, ::selection": {
+      backgroundColor: `${kitty.selection} !important`,
+    },
     ".cm-gutters": {
       backgroundColor: kitty.bg,
       color: kitty.gray,
@@ -69,6 +69,33 @@ export const tokyoNightMoonTheme = EditorView.theme(
       backgroundColor: kitty.black,
       border: `1px solid ${kitty.gray}`,
       color: kitty.fg,
+    },
+
+    ".cm-vim-panel": {
+      backgroundColor: kitty.bgDarker,
+      "& *": {
+        backgroundColor: "transparent !important",
+        border: "none !important",
+        outline: "none !important",
+      },
+    },
+    ".cm-vim-panel input": {
+      all: "unset",
+
+      color: `${kitty.lightWhite} !important`,
+      backgroundColor: "transparent !important",
+
+      display: "inline-block",
+      flex: "1",
+      fontFamily: "monospace",
+      fontSize: "inherit",
+      caretColor: kitty.cursor,
+    },
+
+    ".cm-vim-panel span": {
+      color: kitty.lightWhite,
+      display: "flex",
+      alignItems: "center",
     },
   },
   { dark: true },

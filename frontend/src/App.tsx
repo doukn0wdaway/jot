@@ -12,6 +12,7 @@ function App() {
     document.addEventListener("focusin", onFocusIn);
     return () => document.removeEventListener("focusin", onFocusIn);
   }, []);
+
   // const [name, setName] = useState<string>("");
   // const [result, setResult] = useState<string>(
   //   "Please enter your name below 👇",
