@@ -23,7 +23,7 @@ func (n *NoteService) SaveNote(content string) error {
 
 	if n.currentNotePath == "" {
 		t := time.Now()
-		filename := fmt.Sprintf("%d-%02d-%s-%02d:%02d:%02d.md",
+		filename := fmt.Sprintf("%d-%02d-%s-%02d%02d%02d.md",
 			t.Year(), t.Day(), strings.ToUpper(t.Format("Jan")),
 			t.Hour(), t.Minute(), t.Second())
 		n.currentNotePath = filepath.Join(inboxPath, filename)
