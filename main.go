@@ -36,13 +36,24 @@ func main() {
 	// 'Bind' is a list of Go struct instances. The frontend has access to the methods of these instances.
 	// 'Mac' options tailor the application when running an macOS.
 	app := application.New(application.Options{
-		Name:        "jot",
-		Description: "A demo of using raw HTML & CSS",
+		Name:        "Jot",
+		Description: "tool for fast notes",
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
+		},
+		SingleInstance: &application.SingleInstanceOptions{
+			UniqueID: "com.doukn0wdaway.jot",
+			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
+				app := application.Get()
+				window, isExists := app.Window.GetByName("jot-main")
+				if isExists == true {
+					window.Show()
+					window.Focus()
+				}
+			},
 		},
 	})
 
@@ -53,14 +64,15 @@ func main() {
 	// 'URL' is the URL that will be loaded into the webview.
 
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:     "Jot",
-		Width:     0,
-		Height:    0,
-		MinWidth:  600,
-		MinHeight: 400,
-		URL:       "/",
-		// Frameless:   true,
-		// AlwaysOnTop: true,
+		Name:        "jot-main",
+		Title:       "Jot",
+		Width:       0,
+		Height:      0,
+		MinWidth:    600,
+		MinHeight:   400,
+		URL:         "/",
+		Frameless:   true,
+		AlwaysOnTop: true,
 	})
 
 	window.Hide()
@@ -68,7 +80,6 @@ func main() {
 	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		e.Cancel()
 		window.Hide()
-		return
 	})
 
 	systray := app.SystemTray.New()
