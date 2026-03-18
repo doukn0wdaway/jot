@@ -1,21 +1,24 @@
-package main
+package note
 
 import (
 	"fmt"
+	"jot/internal/settings"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
 type NoteService struct {
-	config          *ConfigService
-	settings        *SettingsService
 	currentNotePath string
+	settings        *settings.SettingsService
+}
+
+func NewNoteService(settings *settings.SettingsService) *NoteService {
+	return &NoteService{currentNotePath: "", settings: settings}
 }
 
 func (n *NoteService) SaveNote(content string) error {
-	inboxPath := n.settings.GetSettings().InboxPath
+	inboxPath := n.settings.InboxPath()
 
 	if err := os.MkdirAll(inboxPath, 0755); err != nil {
 		return err
@@ -23,8 +26,8 @@ func (n *NoteService) SaveNote(content string) error {
 
 	if n.currentNotePath == "" {
 		t := time.Now()
-		filename := fmt.Sprintf("%d-%02d-%s-%02d%02d%02d.md",
-			t.Year(), t.Day(), strings.ToUpper(t.Format("Jan")),
+		filename := fmt.Sprintf("%d-%02d-%02d-%02d%02d%02d.md",
+			t.Year(), t.Month(), t.Day(),
 			t.Hour(), t.Minute(), t.Second())
 		n.currentNotePath = filepath.Join(inboxPath, filename)
 	}

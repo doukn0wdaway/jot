@@ -1,4 +1,4 @@
-package main
+package tags
 
 import (
 	"os"
@@ -7,19 +7,26 @@ import (
 	"sort"
 	"strings"
 
+	"jot/internal/app_fs"
+	"jot/internal/settings"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 var tagRegex = regexp.MustCompile(`#(\w+)`)
 
 type TagsService struct {
-	config   *ConfigService
-	settings *SettingsService
+	appFs           *app_fs.AppFs
+	settingsService *settings.SettingsService
+}
+
+func NewTagsService(appFs *app_fs.AppFs, settingsService *settings.SettingsService) *TagsService {
+	return &TagsService{appFs, settingsService}
 }
 
 func (t *TagsService) GetTags() []string {
 	var tags []string
-	if err := t.config.readJSON("tags.json", &tags); err != nil {
+	if err := t.appFs.ReadJSON(t.appFs.ConfigDirPath("tags.json"), &tags); err != nil {
 		return nil
 	}
 	return tags
@@ -27,7 +34,7 @@ func (t *TagsService) GetTags() []string {
 
 func (t *TagsService) ScanTags() {
 	go func() {
-		inboxPath := t.settings.GetSettings().InboxPath
+		inboxPath := t.settingsService.InboxPath()
 
 		entries, err := os.ReadDir(inboxPath)
 		if err != nil {
@@ -54,7 +61,7 @@ func (t *TagsService) ScanTags() {
 		}
 		sort.Strings(tags)
 
-		t.config.writeJSON("tags.json", tags)
+		t.appFs.WriteJSON(t.appFs.ConfigDirPath("tags.json"), tags)
 		application.Get().Event.Emit("tags-ready", tags)
 	}()
 }

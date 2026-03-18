@@ -6,18 +6,14 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 export class Settings {
-    "isObsidian": boolean;
-    "vaultPath": string;
+    /**
+     * IsObsidian bool   `json:"isObsidian"`
+     * VaultPath  string `json:"vaultPath"`
+     */
     "inboxPath": string;
 
     /** Creates a new Settings instance. */
     constructor($$source: Partial<Settings> = {}) {
-        if (!("isObsidian" in $$source)) {
-            this["isObsidian"] = false;
-        }
-        if (!("vaultPath" in $$source)) {
-            this["vaultPath"] = "";
-        }
         if (!("inboxPath" in $$source)) {
             this["inboxPath"] = "";
         }

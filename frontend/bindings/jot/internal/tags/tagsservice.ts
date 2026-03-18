@@ -6,13 +6,13 @@
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 export function GetTags(): $CancellablePromise<string[]> {
-    return $Call.ByID(4245036661).then(($result: any) => {
+    return $Call.ByID(93149355).then(($result: any) => {
         return $$createType0($result);
     });
 }
 
 export function ScanTags(): $CancellablePromise<void> {
-    return $Call.ByID(1808154260);
+    return $Call.ByID(834742582);
 }
 
 // Private type creation functions

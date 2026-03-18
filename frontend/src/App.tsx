@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Editor } from "./Editor";
-import { TagsService, NoteService } from "../bindings/jot";
 import { Events } from "@wailsio/runtime";
+import { TagsService } from "../bindings/jot/internal/tags";
+import { NoteService } from "../bindings/jot/internal/note";
+
+function preventAlt(e: KeyboardEvent) {
+  if (e.key === "Alt") {
+    e.preventDefault;
+  }
+}
 
 function App() {
   const [tags, setTags] = useState<string[]>([]);
@@ -18,20 +25,24 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Загружаем кеш сразу
     TagsService.GetTags().then((cached) => {
       if (cached?.length) setTags(cached);
     });
 
-    // Запускаем фоновый скан
     TagsService.ScanTags();
 
-    // Обновляем когда скан завершён
     const unsub = Events.On("tags-ready", (e) => {
       setTags(e.data as string[]);
     });
 
-    return () => unsub();
+    window.addEventListener("keydown", preventAlt);
+    window.addEventListener("keyup", preventAlt);
+
+    return () => {
+      window.removeEventListener("keydown", preventAlt);
+      window.removeEventListener("keyup", preventAlt);
+      unsub();
+    };
   }, []);
 
   return (

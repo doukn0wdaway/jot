@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { EditorView, minimalSetup } from "codemirror";
+import { keymap } from "@codemirror/view";
 import { Compartment, EditorState } from "@codemirror/state";
 import { Vim, vim } from "@replit/codemirror-vim";
 import { autocompletion } from "@codemirror/autocomplete";
@@ -19,7 +20,12 @@ interface EditorProps {
   tags: string[];
 }
 
-export const Editor = ({ initialValue, onSave, onDiscard, tags }: EditorProps) => {
+export const Editor = ({
+  initialValue,
+  onSave,
+  onDiscard,
+  tags,
+}: EditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -45,9 +51,21 @@ export const Editor = ({ initialValue, onSave, onDiscard, tags }: EditorProps) =
       const view = viewRef.current;
       if (!view) return;
       dataRef.current.onDiscard();
-      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "" } });
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: "" },
+      });
       Window.Hide();
     });
+
+    Vim.defineAction("openPalette", () => {
+      alert("palette");
+    });
+    Vim.mapCommand(":", "action", "openPalette", {}, { context: "normal" });
+    Vim.defineAction("hideWindow", () => Window.Hide());
+
+    Vim.mapCommand("<C-p>", "action", "openPalette", {}, { context: "normal" });
+    Vim.mapCommand("<C-p>", "action", "openPalette", {}, { context: "insert" });
+    Vim.mapCommand("<Esc>", "action", "hideWindow", {}, { context: "normal" });
 
     Vim.defineEx("wq", "wq", () => {
       const view = viewRef.current;
@@ -55,14 +73,28 @@ export const Editor = ({ initialValue, onSave, onDiscard, tags }: EditorProps) =
       const text = view.state.doc.toString() || "";
       dataRef.current.onSave(text);
       dataRef.current.onDiscard();
-      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: "" } });
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: "" },
+      });
       Window.Hide();
     });
 
     const state = EditorState.create({
       doc: initialValue,
       extensions: [
-        vimCompartment.of(useVimMotions ? vim() : []),
+        vimCompartment.of(
+          useVimMotions
+            ? [vim()]
+            : keymap.of([
+                {
+                  key: "Ctrl-p",
+                  run: () => {
+                    alert("palette");
+                    return true;
+                  },
+                },
+              ]),
+        ),
         minimalSetup,
         markdown({ codeLanguages: languages }),
         javascript({ jsx: true, typescript: true }),
@@ -129,7 +161,19 @@ export const Editor = ({ initialValue, onSave, onDiscard, tags }: EditorProps) =
 
   useEffect(() => {
     viewRef.current?.dispatch({
-      effects: vimCompartment.reconfigure(useVimMotions ? vim() : []),
+      effects: vimCompartment.reconfigure(
+        useVimMotions
+          ? [vim()]
+          : keymap.of([
+              {
+                key: "Ctrl-p",
+                run: () => {
+                  alert("palette");
+                  return true;
+                },
+              },
+            ]),
+      ),
     });
   }, [useVimMotions]);
 

@@ -3,6 +3,10 @@ package main
 import (
 	"embed"
 	_ "embed"
+	"jot/internal/app_fs"
+	"jot/internal/note"
+	"jot/internal/settings"
+	"jot/internal/tags"
 	"log"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -17,10 +21,14 @@ func init() {
 }
 
 func main() {
-	configSvc := &ConfigService{}
-	settingsSvc := &SettingsService{config: configSvc}
-	tagsSvc := &TagsService{config: configSvc, settings: settingsSvc}
-	noteSvc := &NoteService{config: configSvc, settings: settingsSvc}
+	appFs, err := app_fs.NewAppFs()
+	if err != nil {
+		panic(err)
+	}
+
+	settingsSvc := settings.NewSettingsService(appFs)
+	tagsSvc := tags.NewTagsService(appFs, settingsSvc)
+	noteSvc := note.NewNoteService(settingsSvc)
 
 	app := application.New(application.Options{
 		Name:        "Jot",
@@ -80,7 +88,7 @@ func main() {
 
 	systray.SetMenu(menu)
 
-	err := app.Run()
+	err = app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}

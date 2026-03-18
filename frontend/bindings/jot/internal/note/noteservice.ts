@@ -6,9 +6,9 @@
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 export function ResetCurrNotePath(): $CancellablePromise<void> {
-    return $Call.ByID(1826480663);
+    return $Call.ByID(2102471756);
 }
 
 export function SaveNote(content: string): $CancellablePromise<void> {
-    return $Call.ByID(3424511616, content);
+    return $Call.ByID(4054037293, content);
 }

@@ -9,14 +9,18 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
-export function GetSettings(): $CancellablePromise<$models.Settings> {
-    return $Call.ByID(3034808949).then(($result: any) => {
+export function Get(): $CancellablePromise<$models.Settings> {
+    return $Call.ByID(3259914990).then(($result: any) => {
         return $$createType0($result);
     });
 }
 
-export function SaveSettings(settings: $models.Settings): $CancellablePromise<void> {
-    return $Call.ByID(2662658340, settings);
+export function InboxPath(): $CancellablePromise<string> {
+    return $Call.ByID(2273021689);
+}
+
+export function Save(settings: $models.Settings): $CancellablePromise<void> {
+    return $Call.ByID(3879638799, settings);
 }
 
 // Private type creation functions
