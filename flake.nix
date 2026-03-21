@@ -10,30 +10,79 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+
+        runtimeDeps = with pkgs; [
+          gtk3
+          webkitgtk_4_1
+          glib-networking
+          gsettings-desktop-schemas
+          librsvg
+          libGL
+          pango
+          cairo
+          gdk-pixbuf
+        ];
+
+        frontend = pkgs.buildNpmPackage {
+          pname = "jot-frontend";
+          version = "0.1.0";
+          src = ./frontend;
+
+          # npmDepsHash = pkgs.lib.fakeHash;
+          npmDepsHash = "sha256-LiuDgkkIha1QC5IDTaRt+e+wUSoUHkq1M/ONL8mMCrc=";
+
+          makeCacheWritable = true;
+
+          installPhase = ''
+            cp -r dist $out
+          '';
+        };
       in
       {
-        devShells.default = pkgs.mkShell {
+        packages.default = pkgs.buildGoModule rec {
+          pname = "jot";
+          version = "0.1.0";
+          src = ./.;
+
+          # vendorHash  = pkgs.lib.fakeHash;
+          vendorHash = "sha256-TSqZGL8qY/RRmW9b/EJ8irA29rr61awNDSRnSM68Cq0=";
+
           nativeBuildInputs = with pkgs; [
-            go
             pkg-config
             gcc
-            nodejs_24
+            makeWrapper
           ];
+          buildInputs = runtimeDeps;
 
-          buildInputs = with pkgs; [
-            gtk3
-            webkitgtk_4_1
-
-            # Важно для стилей и работы сети в WebView
-            glib-networking
-            gsettings-desktop-schemas
-            librsvg
-
-            # Графика
-            mesa
-            libGL
+          ldflags = [
+            "-s"
+            "-w"
           ];
+          tags = [ "production" ];
+          trimpath = true;
 
+          subPackages = [ "." ];
+
+          preBuild = ''
+            mkdir -p frontend/dist
+            cp -r ${frontend}/* frontend/dist/
+          '';
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp $GOPATH/bin/${pname} $out/bin/ || cp ${pname} $out/bin/
+            wrapProgram $out/bin/${pname} \
+              --set GDK_BACKEND wayland \
+              --set GIO_EXTRA_MODULES "${pkgs.glib-networking}/lib/gio/modules" \
+              --set XDG_DATA_DIRS "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}" \
+              --prefix LD_LIBRARY_PATH : "${pkgs.lib.makeLibraryPath [ pkgs.gtk3 pkgs.webkitgtk_4_1 pkgs.libGL ]}"
+          '';
+
+        };
+
+        devShells.default = pkgs.mkShell {
+          nativeBuildInputs = with pkgs; [ go pkg-config gcc nodejs_24 ];
+          buildInputs = runtimeDeps;
           shellHook = ''
             export GOPATH=$HOME/go
             export PATH=$PATH:$GOPATH/bin
@@ -50,8 +99,6 @@
             
             # 4. Исправление рендеринга в Hyprland
             export GDK_BACKEND=wayland
-            # Если стили все равно "битые" или экран черный, раскомментируй это:
-            # export WEBKIT_DISABLE_COMPOSITING_MODE=1 
 
             echo "✅ Wails v3 environment loaded"
           '';
