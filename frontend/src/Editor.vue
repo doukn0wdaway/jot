@@ -10,39 +10,7 @@ import { languages } from "@codemirror/language-data";
 import { tokyoNightMoon } from "./theme";
 import { togglePalette, isPaletteOpen, isVimModeEnabled } from "./store";
 import Palette from "./Palette.vue";
-
-const handleGlobalKeyDown = (e: KeyboardEvent) => {
-  // TODO: перенести на стек хоткеев
-  const key = e.key;
-  const isCmd = e.ctrlKey || e.metaKey;
-
-  // Глобальные хоткеи
-  if (isCmd && key.toLowerCase() === "p") {
-    e.preventDefault();
-    togglePalette();
-    return;
-  }
-
-  // Относятся к палетке
-  if (isPaletteOpen.value) {
-    if (key === "Escape") {
-      isPaletteOpen.value = false;
-      e.preventDefault();
-      return;
-    }
-    return;
-  }
-
-  // Если вим мод
-  if (isVimModeEnabled.value) {
-    if (key === "Escape") {
-      if (viewRef?.value) {
-        const cm = getCM(viewRef?.value);
-        if (cm) Vim.handleKey(cm, "<Esc>", "vim");
-      }
-    }
-  }
-};
+import { addVimHandler } from "./hotkeys";
 
 const props = defineProps<{
   initialValue?: string;
@@ -63,9 +31,14 @@ watch(isPaletteOpen, async (open) => {
   }
 });
 
-onMounted(() => {
-  window.addEventListener("keydown", handleGlobalKeyDown, true);
+const unsubFromEscape = addVimHandler("Escape", (_) => {
+  if (viewRef?.value) {
+    const cm = getCM(viewRef?.value);
+    if (cm) Vim.handleKey(cm, "<Esc>", "vim");
+  }
+});
 
+onMounted(() => {
   if (!editorRef.value) return;
   //
   // Vim.defineEx("write", "w", () => {
@@ -156,8 +129,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", handleGlobalKeyDown);
   viewRef.value?.destroy();
+  unsubFromEscape();
 });
 
 watch(isVimModeEnabled, (enabled) => {

@@ -4,6 +4,7 @@ import { Events } from "@wailsio/runtime";
 import { TagsService } from "../bindings/jot/internal/tags";
 import Editor from "./Editor.vue";
 import { NoteService } from "../bindings/jot/internal/note";
+import { handleGlobalKeyDown } from "./hotkeys";
 
 let tagsReadyEvent: () => void;
 
@@ -34,12 +35,16 @@ onMounted(async () => {
 
   window.addEventListener("keyup", preventAlt);
   window.addEventListener("keydown", preventAlt);
+  window.addEventListener("keydown", handleGlobalKeyDown, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener("focusin", isFocusAllowed);
+
   window.removeEventListener("keyup", preventAlt);
   window.removeEventListener("keydown", preventAlt);
+
+  window.removeEventListener("keydown", handleGlobalKeyDown);
   tagsReadyEvent();
 });
 

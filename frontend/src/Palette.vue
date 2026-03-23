@@ -1,18 +1,31 @@
 <script lang="ts" setup>
-import { nextTick, shallowRef, watch } from "vue";
+import { nextTick, onUnmounted, shallowRef, watch } from "vue";
 import { isPaletteOpen } from "./store";
 import { colors } from "./theme";
+import { addPaletteHandler } from "./hotkeys";
 
 const accentColor = colors.lightWhite;
 const fg = colors.fg;
 const inputRef = shallowRef<HTMLInputElement>();
 
 watch(isPaletteOpen, async (open) => {
+  if (!inputRef.value) return;
+
   if (open) {
     await nextTick();
-    inputRef.value?.focus();
+    inputRef.value.focus();
+    inputRef.value.value = "";
   }
 });
+
+const unsubFromEscape = addPaletteHandler("Escape", (e) => {
+  isPaletteOpen.value = false;
+  e.preventDefault();
+
+  return;
+});
+
+onUnmounted(unsubFromEscape);
 </script>
 
 <template>
