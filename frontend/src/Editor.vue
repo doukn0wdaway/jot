@@ -1,14 +1,48 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted, shallowRef } from "vue";
+import { onMounted, onUnmounted, shallowRef, watch } from "vue";
 import { EditorView, minimalSetup } from "codemirror";
 import { Compartment, EditorState } from "@codemirror/state";
-import { Vim, vim } from "@replit/codemirror-vim";
+import { getCM, Vim, vim } from "@replit/codemirror-vim";
 import { autocompletion } from "@codemirror/autocomplete";
 import { markdown } from "@codemirror/lang-markdown";
 import { javascript } from "@codemirror/lang-javascript";
 import { languages } from "@codemirror/language-data";
-import { Window } from "@wailsio/runtime";
 import { tokyoNightMoon } from "./theme";
+import { togglePalette, isPaletteOpen, isVimModeEnabled } from "./store";
+import Palette from "./Palette.vue";
+
+const handleGlobalKeyDown = (e: KeyboardEvent) => {
+  // TODO: перенести на стек хоткеев
+  const key = e.key;
+  const isCmd = e.ctrlKey || e.metaKey;
+
+  // Глобальные хоткеи
+  if (isCmd && key.toLowerCase() === "p") {
+    e.preventDefault();
+    togglePalette();
+    return;
+  }
+
+  // Относятся к палетке
+  if (isPaletteOpen.value) {
+    if (key === "Escape") {
+      isPaletteOpen.value = false;
+      e.preventDefault();
+      return;
+    }
+    return;
+  }
+
+  // Если вим мод
+  if (isVimModeEnabled.value) {
+    if (key === "Escape") {
+      if (viewRef?.value) {
+        const cm = getCM(viewRef?.value);
+        if (cm) Vim.handleKey(cm, "<Esc>", "vim");
+      }
+    }
+  }
+};
 
 const props = defineProps<{
   initialValue?: string;
@@ -23,45 +57,54 @@ const viewRef = shallowRef<EditorView>();
 const vimCompartment = new Compartment();
 const completionCompartment = new Compartment();
 
+watch(isPaletteOpen, async (open) => {
+  if (!open) {
+    viewRef.value?.focus();
+  }
+});
+
 onMounted(() => {
+  window.addEventListener("keydown", handleGlobalKeyDown, true);
+
   if (!editorRef.value) return;
+  //
+  // Vim.defineEx("write", "w", () => {
+  // const text = viewRef.value?.state.doc.toString() ?? "";
+  //   props.onSave(text);
+  // });
+  //
+  // Vim.defineEx("quit", "q", () => {
+  //   const view = viewRef.value;
+  //   if (!view) return;
+  //   Window.Hide();
+  // });
+  //
+  // Vim.defineEx("new", "n", () => {
+  //   view.dispatch({
+  //     changes: { from: 0, to: view.state.doc.length, insert: "" },
+  //   });
+  //   props.onNew();
+  // });
+  //
+  // Vim.defineEx("wq", "wq", () => {
+  //   const view = viewRef.value;
+  //   if (!view) return;
+  //   props.onSave(view.state.doc.toString() ?? "");
+  //   Window.Hide();
+  // });
+  //
+  // Vim.defineAction("hideWindow", () => Window.Hide());
+  // Vim.mapCommand("<Esc>", "action", "hideWindow", {}, { context: "normal" });
+  // Vim.mapCommand("<C-p>", "action", "togglePalette", {}, { context: "normal" });
+  // Vim.mapCommand("<C-p>", "action", "togglePalette", {}, { context: "insert" });
 
-  Vim.defineEx("write", "w", () => {
-    const text = viewRef.value?.state.doc.toString() ?? "";
-    props.onSave(text);
-  });
-
-  Vim.defineEx("quit", "q", () => {
-    const view = viewRef.value;
-    if (!view) return;
-    Window.Hide();
-  });
-
-  Vim.defineEx("new", "n", () => {
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: "" },
-    });
-    props.onNew();
-  });
-
-  Vim.defineEx("wq", "wq", () => {
-    const view = viewRef.value;
-    if (!view) return;
-    props.onSave(view.state.doc.toString() ?? "");
-    Window.Hide();
-  });
-
-  Vim.defineAction("openPalette", () => alert("palette"));
-  Vim.defineAction("hideWindow", () => Window.Hide());
-  // Vim.mapCommand(":", "action", "openPalette", {}, { context: "normal" });
-  Vim.mapCommand("<C-p>", "action", "openPalette", {}, { context: "normal" });
-  Vim.mapCommand("<C-p>", "action", "openPalette", {}, { context: "insert" });
-  Vim.mapCommand("<Esc>", "action", "hideWindow", {}, { context: "normal" });
+  Vim.defineAction("togglePalette", togglePalette);
+  Vim.mapCommand(":", "action", "togglePalette", {}, { context: "normal" });
 
   const state = EditorState.create({
     doc: props.initialValue,
     extensions: [
-      vimCompartment.of([vim()]),
+      vimCompartment.of(isVimModeEnabled.value ? [vim()] : []),
       minimalSetup,
       markdown({ codeLanguages: languages }),
       javascript({ jsx: true, typescript: true }),
@@ -113,7 +156,16 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener("keydown", handleGlobalKeyDown);
   viewRef.value?.destroy();
+});
+
+watch(isVimModeEnabled, (enabled) => {
+  if (viewRef.value) {
+    viewRef.value.dispatch({
+      effects: vimCompartment.reconfigure(enabled ? [vim()] : []),
+    });
+  }
 });
 </script>
 
@@ -121,6 +173,7 @@ onUnmounted(() => {
   <div :class="$style.wrapper">
     <div ref="editorRef" :class="$style.editor" data-focus-allowed />
   </div>
+  <Palette />
 </template>
 
 <style module>

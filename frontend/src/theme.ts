@@ -2,7 +2,7 @@ import { EditorView } from "@codemirror/view";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 
-const kitty = {
+export const colors = {
   bg: "#222436",
   bgDarker: "#181a36",
   fg: "#c8d3f5",
@@ -32,21 +32,21 @@ export const tokyoNightMoonTheme = EditorView.theme(
   {
     "&": {
       fontSize: "14px",
-      color: kitty.fg,
-      backgroundColor: kitty.bg,
+      color: colors.fg,
+      backgroundColor: colors.bg,
     },
     ".cm-content": {
-      caretColor: kitty.cursor,
+      caretColor: colors.cursor,
     },
     "&.cm-focused .cm-cursor": {
-      borderLeftColor: kitty.cursor,
+      borderLeftColor: colors.cursor,
     },
     ".cm-selectionBackground, ::selection": {
-      backgroundColor: `${kitty.selection} !important`,
+      backgroundColor: `${colors.selection} !important`,
     },
     ".cm-gutters": {
-      backgroundColor: kitty.bg,
-      color: kitty.gray,
+      backgroundColor: colors.bg,
+      color: colors.gray,
       border: "none",
     },
     ".cm-activeLine": {
@@ -54,25 +54,25 @@ export const tokyoNightMoonTheme = EditorView.theme(
     },
     ".cm-activeLineGutter": {
       backgroundColor: "#2f334d66",
-      color: kitty.blue,
+      color: colors.blue,
     },
     // Стиль для Vim-курсора (блочный)
     ".cm-fat-cursor": {
-      backgroundColor: `${kitty.cursor} !important`,
-      color: `${kitty.cursorText} !important`,
+      backgroundColor: `${colors.cursor} !important`,
+      color: `${colors.cursorText} !important`,
     },
     "&.cm-focused .cm-fat-cursor": {
-      backgroundColor: `${kitty.cursor} !important`,
+      backgroundColor: `${colors.cursor} !important`,
     },
     // Тултипы
     ".cm-tooltip": {
-      backgroundColor: kitty.black,
-      border: `1px solid ${kitty.gray}`,
-      color: kitty.fg,
+      backgroundColor: colors.black,
+      border: `1px solid ${colors.gray}`,
+      color: colors.fg,
     },
 
     ".cm-vim-panel": {
-      backgroundColor: kitty.bgDarker,
+      backgroundColor: colors.bgDarker,
       "& *": {
         backgroundColor: "transparent !important",
         border: "none !important",
@@ -82,18 +82,18 @@ export const tokyoNightMoonTheme = EditorView.theme(
     ".cm-vim-panel input": {
       all: "unset",
 
-      color: `${kitty.lightWhite} !important`,
+      color: `${colors.lightWhite} !important`,
       backgroundColor: "transparent !important",
 
       display: "inline-block",
       flex: "1",
       fontFamily: "monospace",
       fontSize: "inherit",
-      caretColor: kitty.cursor,
+      caretColor: colors.cursor,
     },
 
     ".cm-vim-panel span": {
-      color: kitty.lightWhite,
+      color: colors.lightWhite,
       display: "flex",
       alignItems: "center",
     },
@@ -102,26 +102,26 @@ export const tokyoNightMoonTheme = EditorView.theme(
 );
 
 export const tokyoNightMoonHighlight = HighlightStyle.define([
-  { tag: [t.keyword, t.operator, t.modifier], color: kitty.magenta },
-  { tag: [t.string, t.regexp, t.special(t.string)], color: kitty.green },
+  { tag: [t.keyword, t.operator, t.modifier], color: colors.magenta },
+  { tag: [t.string, t.regexp, t.special(t.string)], color: colors.green },
   {
     tag: [t.variableName, t.definition(t.variableName), t.propertyName],
-    color: kitty.cyan,
+    color: colors.cyan,
   },
-  { tag: [t.function(t.variableName), t.labelName], color: kitty.blue },
-  { tag: [t.typeName, t.className, t.number, t.changed], color: kitty.orange },
-  { tag: [t.comment, t.quote], color: kitty.gray, fontStyle: "italic" },
+  { tag: [t.function(t.variableName), t.labelName], color: colors.blue },
+  { tag: [t.typeName, t.className, t.number, t.changed], color: colors.orange },
+  { tag: [t.comment, t.quote], color: colors.gray, fontStyle: "italic" },
   {
     tag: [t.heading1, t.heading2, t.heading3],
-    color: kitty.blue,
+    color: colors.blue,
     fontWeight: "bold",
   },
-  { tag: [t.url, t.link], color: kitty.url, textDecoration: "underline" },
-  { tag: [t.strong], fontWeight: "bold", color: kitty.orange },
-  { tag: [t.emphasis], fontStyle: "italic", color: kitty.magenta },
+  { tag: [t.url, t.link], color: colors.url, textDecoration: "underline" },
+  { tag: [t.strong], fontWeight: "bold", color: colors.orange },
+  { tag: [t.emphasis], fontStyle: "italic", color: colors.magenta },
   { tag: [t.strikethrough], textDecoration: "line-through" },
-  { tag: [t.atom, t.bool], color: kitty.orange },
-  { tag: [t.invalid], color: kitty.darkRed },
+  { tag: [t.atom, t.bool], color: colors.orange },
+  { tag: [t.invalid], color: colors.darkRed },
 ]);
 
 export const tokyoNightMoon = [
