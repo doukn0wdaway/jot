@@ -58,16 +58,15 @@ func main() {
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:        "jot-main",
 		Title:       "Jot",
-		Width:       0,
-		Height:      0,
+		Width:       600,
+		Height:      400,
 		MinWidth:    600,
 		MinHeight:   400,
 		URL:         "/",
-		Frameless:   true,
-		AlwaysOnTop: true,
+		Frameless:   false,
+		AlwaysOnTop: false,
+		Hidden:      true,
 	})
-
-	window.Hide()
 
 	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		e.Cancel()

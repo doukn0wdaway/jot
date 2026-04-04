@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { SettingsService } from "../bindings/jot/internal/settings";
 
 export const isPaletteOpen = ref<boolean>(false);
 export const togglePalette = () => {
@@ -7,5 +8,11 @@ export const togglePalette = () => {
 
 export const isVimModeEnabled = ref<boolean>(true);
 export const toggleVimMode = () => {
-  isVimModeEnabled.value = !isVimModeEnabled.value;
+  SettingsService.ToggleVimMode().then((res) => (isVimModeEnabled.value = res));
 };
+
+export function onStartup() {
+  SettingsService.Get().then(
+    (res) => (isVimModeEnabled.value = res.isVimModeEnabled),
+  );
+}

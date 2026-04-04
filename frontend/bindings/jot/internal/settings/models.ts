@@ -10,10 +10,14 @@ export class Settings {
      * IsObsidian bool   `json:"isObsidian"`
      * VaultPath  string `json:"vaultPath"`
      */
+    "isVimModeEnabled": boolean;
     "inboxPath": string;
 
     /** Creates a new Settings instance. */
     constructor($$source: Partial<Settings> = {}) {
+        if (!("isVimModeEnabled" in $$source)) {
+            this["isVimModeEnabled"] = false;
+        }
         if (!("inboxPath" in $$source)) {
             this["inboxPath"] = "";
         }

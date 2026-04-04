@@ -1,3 +1,4 @@
+import { SettingsService } from "../bindings/jot/internal/settings";
 import { isPaletteOpen, togglePalette, isVimModeEnabled } from "./store";
 
 type KeyDownHandler = (e: KeyboardEvent) => void;

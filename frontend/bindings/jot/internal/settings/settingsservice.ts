@@ -23,5 +23,9 @@ export function Save(settings: $models.Settings): $CancellablePromise<void> {
     return $Call.ByID(3879638799, settings);
 }
 
+export function ToggleVimMode(): $CancellablePromise<boolean> {
+    return $Call.ByID(4158284469);
+}
+
 // Private type creation functions
 const $$createType0 = $models.Settings.createFrom;

@@ -7,13 +7,14 @@ import (
 )
 
 type Settings struct {
-	//TODO: ADD Support for obsidian vault
+	// TODO: ADD Support for obsidian vault
 	// хочу чтобы сканились теги из VaultPath и из InboxPath,
 	// логика такая: обе папки проверять, инбокс не всегда может быть обсидиан волтом
 
 	// IsObsidian bool   `json:"isObsidian"`
 	// VaultPath  string `json:"vaultPath"`
-	InboxPath string `json:"inboxPath"`
+	IsVimModeEnabled bool   `json:"isVimModeEnabled"`
+	InboxPath        string `json:"inboxPath"`
 }
 
 type SettingsService struct {
@@ -27,7 +28,8 @@ func NewSettingsService(appFs *app_fs.AppFs) *SettingsService {
 func defaultSettings() Settings {
 	home, _ := os.UserHomeDir()
 	return Settings{
-		InboxPath: filepath.Join(home, ".jot"),
+		InboxPath:        filepath.Join(home, ".jot"),
+		IsVimModeEnabled: false,
 	}
 }
 
@@ -47,4 +49,16 @@ func (s *SettingsService) Save(settings Settings) error {
 
 func (s *SettingsService) InboxPath() string {
 	return s.Get().InboxPath
+}
+func (s *SettingsService) isVimModeEnabled() bool {
+	return s.Get().IsVimModeEnabled
+}
+
+func (s *SettingsService) ToggleVimMode() bool {
+	// тут может рейс кондишн произойти потому шо мьютекса нет, можно кешировать настройки просто
+	curr := s.Get()
+	curr.IsVimModeEnabled = !curr.IsVimModeEnabled
+	s.Save(curr)
+
+	return curr.IsVimModeEnabled
 }

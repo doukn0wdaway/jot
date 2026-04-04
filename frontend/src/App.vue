@@ -5,11 +5,18 @@ import { TagsService } from "../bindings/jot/internal/tags";
 import Editor from "./Editor.vue";
 import { NoteService } from "../bindings/jot/internal/note";
 import { handleGlobalKeyDown } from "./hotkeys";
+import { onStartup } from "./store";
 
 let tagsReadyEvent: () => void;
 
 function preventAlt(e: KeyboardEvent) {
   if (e.key === "Alt") {
+    e.preventDefault();
+  }
+}
+
+function preventTab(e: KeyboardEvent) {
+  if (e.key === "Tab") {
     e.preventDefault();
   }
 }
@@ -28,6 +35,7 @@ onMounted(async () => {
 
   tags.value = await TagsService.GetTags();
   TagsService.ScanTags();
+  onStartup();
 
   tagsReadyEvent = Events.On("tags-ready", (e) => {
     tags.value = e.data;
@@ -35,6 +43,7 @@ onMounted(async () => {
 
   window.addEventListener("keyup", preventAlt);
   window.addEventListener("keydown", preventAlt);
+  window.addEventListener("keydown", preventTab);
   window.addEventListener("keydown", handleGlobalKeyDown, true);
 });
 
@@ -43,7 +52,7 @@ onUnmounted(() => {
 
   window.removeEventListener("keyup", preventAlt);
   window.removeEventListener("keydown", preventAlt);
-
+  window.removeEventListener("keydown", preventTab);
   window.removeEventListener("keydown", handleGlobalKeyDown);
   tagsReadyEvent();
 });

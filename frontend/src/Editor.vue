@@ -8,9 +8,16 @@ import { markdown } from "@codemirror/lang-markdown";
 import { javascript } from "@codemirror/lang-javascript";
 import { languages } from "@codemirror/language-data";
 import { tokyoNightMoon } from "./theme";
-import { togglePalette, isPaletteOpen, isVimModeEnabled } from "./store";
+import {
+  togglePalette,
+  isPaletteOpen,
+  isVimModeEnabled,
+  toggleVimMode,
+} from "./store";
 import Palette from "./Palette.vue";
 import { addVimHandler } from "./hotkeys";
+import { registerCommand } from "./commands";
+import { Window } from "@wailsio/runtime";
 
 const props = defineProps<{
   initialValue?: string;
@@ -33,43 +40,69 @@ watch(isPaletteOpen, async (open) => {
 
 const unsubFromEscape = addVimHandler("Escape", (_) => {
   if (viewRef?.value) {
-    const cm = getCM(viewRef?.value);
+    const cm = getCM(viewRef.value);
     if (cm) Vim.handleKey(cm, "<Esc>", "vim");
   }
 });
 
+const unsubWriteCommand = registerCommand({
+  id: "write",
+  title: "Write",
+  action: () => {
+    const text = viewRef.value?.state.doc.toString() ?? "";
+    props.onSave(text);
+  },
+  aliases: ["w"],
+});
+
+const unsubQuitCommand = registerCommand({
+  id: "quit",
+  title: "Close",
+  action: () => {
+    const view = viewRef.value;
+    if (!view) return;
+    Window.Hide();
+  },
+  aliases: ["q", "quit"],
+});
+
+const unsubNewNoteCommand = registerCommand({
+  id: "new-note",
+  title: "Create new note",
+  action: () => {
+    const view = viewRef.value;
+    if (!view) return;
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: "" },
+    });
+    props.onNew();
+  },
+  aliases: ["n", "new"],
+});
+
+const unsubWriteAndQuit = registerCommand({
+  id: "write-quit",
+  title: "Save current note and close",
+  action: () => {
+    const view = viewRef.value;
+    if (!view) return;
+    props.onSave(view.state.doc.toString() ?? "");
+    Window.Hide();
+  },
+  aliases: ["wq"],
+});
+
+const unsubToggleVimMode = registerCommand({
+  id: "toggle-vim-mode",
+  title: "Toggle vim mode",
+  action: () => {
+    toggleVimMode();
+  },
+  aliases: [],
+});
+
 onMounted(() => {
   if (!editorRef.value) return;
-  //
-  // Vim.defineEx("write", "w", () => {
-  // const text = viewRef.value?.state.doc.toString() ?? "";
-  //   props.onSave(text);
-  // });
-  //
-  // Vim.defineEx("quit", "q", () => {
-  //   const view = viewRef.value;
-  //   if (!view) return;
-  //   Window.Hide();
-  // });
-  //
-  // Vim.defineEx("new", "n", () => {
-  //   view.dispatch({
-  //     changes: { from: 0, to: view.state.doc.length, insert: "" },
-  //   });
-  //   props.onNew();
-  // });
-  //
-  // Vim.defineEx("wq", "wq", () => {
-  //   const view = viewRef.value;
-  //   if (!view) return;
-  //   props.onSave(view.state.doc.toString() ?? "");
-  //   Window.Hide();
-  // });
-  //
-  // Vim.defineAction("hideWindow", () => Window.Hide());
-  // Vim.mapCommand("<Esc>", "action", "hideWindow", {}, { context: "normal" });
-  // Vim.mapCommand("<C-p>", "action", "togglePalette", {}, { context: "normal" });
-  // Vim.mapCommand("<C-p>", "action", "togglePalette", {}, { context: "insert" });
 
   Vim.defineAction("togglePalette", togglePalette);
   Vim.mapCommand(":", "action", "togglePalette", {}, { context: "normal" });
@@ -131,6 +164,11 @@ onMounted(() => {
 onUnmounted(() => {
   viewRef.value?.destroy();
   unsubFromEscape();
+  unsubWriteCommand();
+  unsubQuitCommand();
+  unsubNewNoteCommand();
+  unsubWriteAndQuit();
+  unsubToggleVimMode();
 });
 
 watch(isVimModeEnabled, (enabled) => {
