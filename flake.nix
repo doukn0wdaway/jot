@@ -29,7 +29,7 @@
           src = ./frontend;
 
           # npmDepsHash = pkgs.lib.fakeHash;
-          npmDepsHash = "sha256-LiuDgkkIha1QC5IDTaRt+e+wUSoUHkq1M/ONL8mMCrc=";
+          npmDepsHash = "sha256-Ll+reSc57mqU4qrGsFJ5QDOxgD0wJ7PNYuqM3/VTzfk=";
 
           makeCacheWritable = true;
 
